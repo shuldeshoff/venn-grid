@@ -489,11 +489,8 @@
         const centerX = x * cellSize + cellSize / 2;
         const centerY = y * cellSize + cellSize / 2;
         
-        // Определяем видимый размер ячейки с учетом zoom
-        const visibleSize = cellSize * this.zoom;
-        
         // Если ячейка слишком маленькая - ничего не рисуем
-        if (visibleSize < 25) {
+        if (cellSize < 25) {
             this.ctx.restore();
             return;
         }
@@ -503,35 +500,37 @@
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         
-        // Выбираем размер шрифта в зависимости от размера ячейки
-        // Чем больше ячейка - тем крупнее шрифт
+        // Выбираем размер шрифта в зависимости от реального размера ячейки
         let fontSize;
-        if (visibleSize < 40) {
+        if (cellSize < 30) {
+            fontSize = 7;
+        } else if (cellSize < 40) {
             fontSize = 8;
-        } else if (visibleSize < 60) {
+        } else if (cellSize < 50) {
+            fontSize = 9;
+        } else if (cellSize < 70) {
             fontSize = 10;
-        } else if (visibleSize < 100) {
-            fontSize = 12;
-        } else if (visibleSize < 150) {
-            fontSize = 14;
+        } else if (cellSize < 100) {
+            fontSize = 11;
         } else {
-            fontSize = Math.min(18, Math.floor(visibleSize / 10)); // Масштабируемый шрифт
+            fontSize = 12; // Максимальный размер 12px
         }
         
         this.ctx.font = `${fontSize}px Arial`;
         
-        // Добавляем padding внутри ячейки (10% с каждой стороны)
-        const maxWidth = visibleSize * 0.8;
+        // Максимальная ширина текста = 85% от ширины ячейки (padding 7.5% с каждой стороны)
+        const maxWidth = cellSize * 0.85;
         
         // Измеряем текст и обрезаем если не влезает
         let displayText = item.title;
         let textWidth = this.ctx.measureText(displayText).width;
         
-        // Если текст не влезает - обрезаем с многоточием
+        // Если текст не влезает - обрезаем посимвольно с многоточием
         if (textWidth > maxWidth) {
-            while (displayText.length > 1 && textWidth > maxWidth) {
+            while (displayText.length > 1) {
                 displayText = displayText.substring(0, displayText.length - 1);
                 textWidth = this.ctx.measureText(displayText + '…').width;
+                if (textWidth <= maxWidth) break;
             }
             displayText = displayText + '…';
         }
