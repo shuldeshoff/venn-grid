@@ -204,10 +204,10 @@
         const n3c = subsorted.set3.c.length;
         const n3d = subsorted.set3.d.length;
         
-        const n123 = sorted.intersection123.length;
+        let n123 = sorted.intersection123.length;
         const n12 = sorted.intersection12.length + n123;
-        const n13 = sorted.intersection13.length + n123;
-        const n23 = sorted.intersection23.length + n123;
+        let n13 = sorted.intersection13.length + n123;
+        let n23 = sorted.intersection23.length + n123;
         
         const n1 = sorted.set1.length + n12 + n13 + n1a + n1b + n1c + n1d;
         const n2 = sorted.set2.length + n12 + n23 + n2a + n2b + n2c + n2d;
@@ -224,36 +224,44 @@
         const l2 = h2 > 0 ? Math.ceil(n2 / h2) : 0;
         
         const h12 = Math.min(h1, h2);
-        const l12 = h12 > 0 ? Math.ceil(n12 / h12) : 0;
-        const l123 = l12;
-        const h123 = l123 > 0 ? Math.ceil(n123 / l123) : 0;
+        let l12 = h12 > 0 ? Math.ceil(n12 / h12) : 0;
+        let l123 = l12;
+        let h123 = l123 > 0 ? Math.ceil(n123 / l123) : 0;
         
-        let n13_corrected = n13 - n123;
-        let n23_corrected = n23 - n123;
+        // ВАЖНО: Корректируем n13, n23 и n123 как в Godot (Grid.gd строки 250-252)
+        n13 = n13 - n123;
+        n23 = n23 - n123;
+        n123 = (l123 * h123 > n123) ? l123 * h123 : n123;
         
         let l13, h13, l23, h23, l3, h3;
         
         if (n123 > 0) {
-            l13 = h123 > 0 ? Math.ceil(n13_corrected / h123) : 0;
+            l13 = h123 > 0 ? Math.ceil(n13 / h123) : 0;
             h13 = h123;
-            l23 = h123 > 0 ? Math.ceil(n23_corrected / h123) : 0;
+            l23 = h123 > 0 ? Math.ceil(n23 / h123) : 0;
             h23 = h123;
             l3 = l13 + l23 + l123;
-            h3 = l3 > 0 ? Math.ceil((n13_corrected + n23_corrected + n123) / l3) : 0;
+            h3 = l3 > 0 ? Math.ceil((n13 + n23 + n123) / l3) : 0;
         } else {
-            l13 = h12 > 0 ? Math.ceil(n13_corrected / h12) : 0;
+            l13 = h12 > 0 ? Math.ceil(n13 / h12) : 0;
             h13 = h12;
-            l23 = h12 > 0 ? Math.ceil(n23_corrected / h12) : 0;
+            l23 = h12 > 0 ? Math.ceil(n23 / h12) : 0;
             h23 = h12;
             l3 = l13 + l23 + l12;
             h3 = l3 > 0 ? Math.ceil((n3 + n12) / l3) : 0;
-            if (h3 === h12 && n3 - n13_corrected - n23_corrected > 0) {
+            if (h3 === h12 && n3 - n13 - n23 > 0) {
                 h3 += 1;
             }
         }
         
         const width = n123 > 0 ? l1 + l2 - l123 : l1 + l2 - l12;
         const height = n123 > 0 ? h1 + h3 - h123 : h1 + h3 - h12;
+        
+        // Обнуление нулевых размеров (из Godot Grid.gd строки 276-287)
+        if (h12 === 0 || l12 === 0) { h12 = 0; l12 = 0; }
+        if (h13 === 0 || l13 === 0) { h13 = 0; l13 = 0; }
+        if (h23 === 0 || l23 === 0) { h23 = 0; l23 = 0; }
+        if (h123 === 0 || l123 === 0) { h123 = 0; l123 = 0; }
         
         return {
             width: Math.max(width, 0),
