@@ -429,7 +429,7 @@ function vennDiagram() {
                 // Callback при клике
                 onCellClick: (item) => {
                     if (item && item.slug) {
-                        window.location.href = `/games/${item.slug}/`;
+                        window.location.href = `/game/${item.slug}/`;
                     }
                 },
                 
@@ -487,13 +487,6 @@ function vennDiagram() {
                 alert('Не удалось загрузить данные. Попробуйте еще раз.');
             } finally {
                 this.loading = false;
-            }
-        },
-        
-        // Обновление статистики
-        updateStats() {
-            if (this.vennGrid) {
-                this.stats = this.vennGrid.getStats();
             }
         },
         

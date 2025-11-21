@@ -117,7 +117,7 @@ const venn = new VennGrid('canvas-id', {
     // Callback при клике на ячейку
     onCellClick: (item) => {
         console.log('Clicked:', item.title);
-        window.location.href = '/games/' + item.slug;
+        window.location.href = '/game/' + item.slug;
     }
 });
 ```
