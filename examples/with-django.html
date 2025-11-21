@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VennGrid.js + Django - Интеграция</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .filter-section {
+            margin-bottom: 25px;
+        }
+        
+        .filter-section h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 16px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+        
+        .filter-option {
+            margin-bottom: 10px;
+        }
+        
+        .filter-option label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .filter-option label:hover {
+            background: #f8f9fa;
+        }
+        
+        .filter-option input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .controls-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .controls-panel button {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .controls-panel button:hover {
+            background: #7f8c8d;
+        }
+        
+        .canvas-wrapper {
+            background: #2a2a2a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 700px;
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 VennGrid.js + Django Integration Demo</h1>
+    </div>
+    
+    <div class="container">
+        <div class="layout">
+            <!-- Боковая панель с фильтрами -->
+            <div class="sidebar">
+                <h2 style="margin-bottom: 20px;">Фильтры</h2>
+                
+                <!-- Множество 1: Жанры -->
+                <div class="filter-section">
+                    <h3>Множество 1: Жанры</h3>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="genre-filter" value="rpg" checked>
+                            <span>RPG</span>
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="genre-filter" value="strategy">
+                            <span>Strategy</span>
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="genre-filter" value="action">
+                            <span>Action</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Множество 2: Теги -->
+                <div class="filter-section">
+                    <h3>Множество 2: Режим игры</h3>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="tag-filter" value="singleplayer" checked>
+                            <span>Singleplayer</span>
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="tag-filter" value="multiplayer">
+                            <span>Multiplayer</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Множество 3: Платформы -->
+                <div class="filter-section">
+                    <h3>Множество 3: Платформа</h3>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="platform-filter" value="pc" checked>
+                            <span>PC</span>
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="checkbox" class="platform-filter" value="console">
+                            <span>Console</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" onclick="visualize()">
+                    🔍 Визуализировать
+                </button>
+                
+                <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 4px; font-size: 13px;">
+                    <strong>💡 Совет:</strong> Выберите критерии и нажмите "Визуализировать". 
+                    В реальном Django приложении данные будут загружаться с сервера через API.
+                </div>
+            </div>
+            
+            <!-- Основной контент -->
+            <div class="main-content">
+                <div class="controls-panel">
+                    <button onclick="venn.zoomIn()">+ Zoom</button>
+                    <button onclick="venn.zoomOut()">− Zoom</button>
+                    <button onclick="venn.resetView()">↻ Reset</button>
+                    <button onclick="venn.setPalette(0)">Палитра 1</button>
+                    <button onclick="venn.setPalette(1)">Палитра 2</button>
+                </div>
+                
+                <div class="canvas-wrapper">
+                    <canvas id="vennCanvas"></canvas>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <p>⏳ Загрузка данных с сервера...</p>
+                </div>
+                
+                <div class="info-panel" id="infoPanel">
+                    <div class="info-item">
+                        <div class="info-label">Всего игр</div>
+                        <div class="info-value" id="stat-total">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Множество 1</div>
+                        <div class="info-value" id="stat-set1">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Множество 2</div>
+                        <div class="info-value" id="stat-set2">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Множество 3</div>
+                        <div class="info-value" id="stat-set3">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Пересечение 1∩2</div>
+                        <div class="info-value" id="stat-int12">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Пересечение 1∩3</div>
+                        <div class="info-value" id="stat-int13">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Пересечение 2∩3</div>
+                        <div class="info-value" id="stat-int23">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Центр (все)</div>
+                        <div class="info-value" id="stat-int123">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Библиотека VennGrid -->
+    <script src="../src/venn-grid.js"></script>
+    
+    <!-- Тестовые данные -->
+    <script src="../test/test-data.js"></script>
+    
+    <script>
+        let venn;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('vennCanvas');
+            
+            venn = new VennGrid(canvas, {
+                cellSize: 40,
+                enableZoom: true,
+                enablePan: true,
+                showLabels: false,
+                paletteIndex: 0,
+                
+                onCellClick: function(event) {
+                    // В реальном приложении: перейти на страницу игры
+                    alert('Переход на /games/' + event.item.slug + '/\n\n' +
+                          'Игра: ' + event.item.title + '\n' +
+                          'Рейтинг: ' + event.item.rating);
+                },
+                
+                onRenderComplete: function() {
+                    updateStats();
+                }
+            });
+            
+            // Загрузить начальные данные
+            visualize();
+        });
+        
+        async function visualize() {
+            const genreIds = getSelectedValues('.genre-filter');
+            const tagIds = getSelectedValues('.tag-filter');
+            const platformIds = getSelectedValues('.platform-filter');
+            
+            if (genreIds.length === 0 && tagIds.length === 0 && platformIds.length === 0) {
+                alert('Выберите хотя бы один критерий');
+                return;
+            }
+            
+            // Показать индикатор загрузки
+            document.getElementById('loading').classList.add('active');
+            document.querySelector('.canvas-wrapper').style.display = 'none';
+            
+            // В реальном приложении здесь был бы fetch запрос:
+            // const params = new URLSearchParams();
+            // genreIds.forEach(id => params.append('genres', id));
+            // tagIds.forEach(id => params.append('tags', id));
+            // platformIds.forEach(id => params.append('platforms', id));
+            // const response = await fetch('/api/venn/?' + params);
+            // const data = await response.json();
+            
+            // Для демо используем тестовые данные
+            await new Promise(resolve => setTimeout(resolve, 500)); // имитация задержки сети
+            
+            const data = testData; // В реальности: const data = await response.json();
+            
+            // Скрыть индикатор загрузки
+            document.getElementById('loading').classList.remove('active');
+            document.querySelector('.canvas-wrapper').style.display = 'block';
+            
+            // Визуализировать
+            venn.setData(data);
+        }
+        
+        function getSelectedValues(selector) {
+            return Array.from(document.querySelectorAll(selector + ':checked'))
+                .map(cb => cb.value);
+        }
+        
+        function updateStats() {
+            const stats = venn.getStats();
+            if (!stats) return;
+            
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-set1').textContent = stats.set1;
+            document.getElementById('stat-set2').textContent = stats.set2;
+            document.getElementById('stat-set3').textContent = stats.set3;
+            document.getElementById('stat-int12').textContent = stats.intersection12;
+            document.getElementById('stat-int13').textContent = stats.intersection13;
+            document.getElementById('stat-int23').textContent = stats.intersection23;
+            document.getElementById('stat-int123').textContent = stats.intersection123;
+        }
+    </script>
+</body>
+</html>
+

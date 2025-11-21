@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VennGrid.js - Базовый пример</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .controls {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #3a8eef;
+        }
+        
+        button.secondary {
+            background: #666;
+        }
+        
+        button.secondary:hover {
+            background: #555;
+        }
+        
+        .canvas-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 600px;
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        .stats {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .stats h3 {
+            margin-bottom: 15px;
+            color: #4a9eff;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: #3a3a3a;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        
+        .stat-label {
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 VennGrid.js - Базовый пример</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Набор данных:</label>
+                <button onclick="loadTestData()">Полный набор (3 множества)</button>
+                <button onclick="loadSimpleData()">Простой набор (2 множества)</button>
+                <button onclick="loadSubareaDemo()">Демо подобластей (1 множество)</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Управление:</label>
+                <button onclick="venn.zoomIn()">+ Приблизить</button>
+                <button onclick="venn.zoomOut()">- Отдалить</button>
+                <button onclick="venn.resetView()">↻ Сброс</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Палитра:</label>
+                <button onclick="venn.setPalette(0)">Пастельная</button>
+                <button onclick="venn.setPalette(1)" class="secondary">Яркая RGB</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Размер ячейки:</label>
+                <button onclick="venn.setCellSize(30)">Маленькие</button>
+                <button onclick="venn.setCellSize(50)">Средние</button>
+                <button onclick="venn.setCellSize(70)">Большие</button>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="vennCanvas"></canvas>
+        </div>
+        
+        <div class="stats" id="stats">
+            <h3>📊 Статистика</h3>
+            <div class="stats-grid" id="statsContent">
+                <p style="color: #666;">Загрузите данные для отображения статистики</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <!-- Библиотека VennGrid -->
+    <script src="../src/venn-grid.js"></script>
+    
+    <!-- Тестовые данные -->
+    <script src="test-data.js"></script>
+    
+    <script>
+        let venn;
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('vennCanvas');
+            
+            venn = new VennGrid(canvas, {
+                cellSize: 50,
+                enableZoom: true,
+                enablePan: true,
+                showLabels: false,
+                
+                onCellClick: function(event) {
+                    alert('Игра: ' + event.item.title + '\nРейтинг: ' + event.item.rating);
+                },
+                
+                onCellHover: function(event) {
+                    showTooltip(event);
+                },
+                
+                onRenderComplete: function() {
+                    updateStats();
+                }
+            });
+            
+            // Загрузить тестовые данные по умолчанию
+            loadTestData();
+        });
+        
+        function loadTestData() {
+            venn.setData(testData);
+        }
+        
+        function loadSimpleData() {
+            venn.setData(simpleData);
+        }
+        
+        function loadSubareaDemo() {
+            venn.setData(subareaDemo);
+        }
+        
+        function updateStats() {
+            const stats = venn.getStats();
+            if (!stats) return;
+            
+            const html = `
+                <div class="stat-item">
+                    <div class="stat-label">Всего игр</div>
+                    <div class="stat-value">${stats.total}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Множество 1</div>
+                    <div class="stat-value">${stats.set1}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Множество 2</div>
+                    <div class="stat-value">${stats.set2}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Множество 3</div>
+                    <div class="stat-value">${stats.set3}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Пересечение 1∩2</div>
+                    <div class="stat-value">${stats.intersection12}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Пересечение 1∩3</div>
+                    <div class="stat-value">${stats.intersection13}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Пересечение 2∩3</div>
+                    <div class="stat-value">${stats.intersection23}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Пересечение всех</div>
+                    <div class="stat-value">${stats.intersection123}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Размер сетки</div>
+                    <div class="stat-value">${stats.gridSize.width}×${stats.gridSize.height}</div>
+                </div>
+            `;
+            
+            document.getElementById('statsContent').innerHTML = html;
+        }
+        
+        function showTooltip(event) {
+            const tooltip = document.getElementById('tooltip');
+            const item = event.item;
+            
+            tooltip.innerHTML = `
+                <strong>${item.title}</strong><br>
+                Рейтинг: ${item.rating || 'N/A'}<br>
+                ${item.year ? 'Год: ' + item.year + '<br>' : ''}
+                ${item.price !== undefined ? 'Цена: $' + item.price : ''}
+            `;
+            
+            tooltip.style.display = 'block';
+            tooltip.style.left = event.position.x + 15 + 'px';
+            tooltip.style.top = event.position.y + 15 + 'px';
+        }
+        
+        // Скрыть tooltip при движении мыши за пределы canvas
+        document.getElementById('vennCanvas').addEventListener('mouseleave', function() {
+            document.getElementById('tooltip').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
+
