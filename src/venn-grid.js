@@ -465,7 +465,8 @@
                         if (!this.positionMap[x]) this.positionMap[x] = {};
                         this.positionMap[x][y] = item;
                         
-                        if (this.options.showLabels && item.title) {
+                        // Всегда рисуем контент ячейки (адаптивный к zoom)
+                        if (item.title) {
                             this._drawCellLabel(x, y, item, cellSize);
                         }
                     }
@@ -478,13 +479,102 @@
     
     VennGrid.prototype._drawCellLabel = function(x, y, item, cellSize) {
         this.ctx.save();
-        this.ctx.fillStyle = '#000';
-        this.ctx.font = '10px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
         
-        const text = item.title.length > 8 ? item.title.substring(0, 8) + '...' : item.title;
-        this.ctx.fillText(text, x * cellSize + cellSize / 2, y * cellSize + cellSize / 2);
+        const centerX = x * cellSize + cellSize / 2;
+        const centerY = y * cellSize + cellSize / 2;
+        
+        // Определяем уровень детализации в зависимости от zoom
+        const zoom = this.zoom;
+        
+        if (cellSize * zoom < 30) {
+            // Минимальный размер: только точка или маленькая иконка
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+            this.ctx.fill();
+        } else if (cellSize * zoom < 60) {
+            // Средний размер: иконка + сокращенное название
+            this._drawIcon(centerX, centerY - 8, Math.min(cellSize * 0.4, 16));
+            
+            this.ctx.fillStyle = '#000';
+            this.ctx.font = 'bold 9px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'top';
+            
+            const shortTitle = item.title.length > 6 ? item.title.substring(0, 6) + '...' : item.title;
+            this.ctx.fillText(shortTitle, centerX, centerY + 2);
+        } else {
+            // Полный размер: иконка + название + жанры/детали
+            const iconSize = Math.min(cellSize * 0.35, 24);
+            this._drawIcon(centerX, centerY - cellSize * 0.25, iconSize);
+            
+            // Название игры
+            this.ctx.fillStyle = '#000';
+            this.ctx.font = 'bold 11px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'top';
+            
+            const title = item.title.length > 12 ? item.title.substring(0, 12) + '...' : item.title;
+            this.ctx.fillText(title, centerX, centerY + 5);
+            
+            // Дополнительная информация (жанры, рейтинг и т.д.)
+            if (zoom > 1.5 && cellSize * zoom > 80) {
+                this.ctx.font = '9px Arial';
+                this.ctx.fillStyle = '#666';
+                
+                let details = [];
+                if (item.genre) details.push(item.genre);
+                if (item.rating) details.push('★' + item.rating);
+                if (item.year) details.push(String(item.year));
+                
+                if (details.length > 0) {
+                    const detailsText = details.join(' • ');
+                    this.ctx.fillText(detailsText, centerX, centerY + 18);
+                }
+            }
+        }
+        
+        this.ctx.restore();
+    };
+    
+    VennGrid.prototype._drawIcon = function(x, y, size) {
+        this.ctx.save();
+        
+        // Рисуем простую иконку игры (геймпад)
+        this.ctx.strokeStyle = '#333';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.fillStyle = '#fff';
+        
+        // Основа геймпада
+        const width = size * 0.9;
+        const height = size * 0.6;
+        const radius = height / 2;
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - width/2 + radius, y - height/2);
+        this.ctx.lineTo(x + width/2 - radius, y - height/2);
+        this.ctx.arc(x + width/2 - radius, y, radius, -Math.PI/2, Math.PI/2);
+        this.ctx.lineTo(x - width/2 + radius, y + height/2);
+        this.ctx.arc(x - width/2 + radius, y, radius, Math.PI/2, -Math.PI/2);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+        
+        // Крестовина (D-pad) слева
+        const dpadSize = size * 0.15;
+        const dpadX = x - width/4;
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(dpadX - dpadSize/2, y - dpadSize*1.5, dpadSize, dpadSize*3);
+        this.ctx.fillRect(dpadX - dpadSize*1.5, y - dpadSize/2, dpadSize*3, dpadSize);
+        
+        // Кнопки справа
+        const btnRadius = size * 0.08;
+        const btnX = x + width/4;
+        this.ctx.beginPath();
+        this.ctx.arc(btnX, y - size*0.1, btnRadius, 0, Math.PI * 2);
+        this.ctx.arc(btnX + size*0.15, y + size*0.05, btnRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        
         this.ctx.restore();
     };
     
@@ -661,11 +751,16 @@
     VennGrid.prototype._handleClick = function(e) {
         const item = this.getCellAt(e.clientX, e.clientY);
         
-        if (item && this.options.onCellClick) {
-            this.options.onCellClick({
-                item: item,
-                position: {x: e.clientX, y: e.clientY}
-            });
+        if (item) {
+            if (this.options.onCellClick && typeof this.options.onCellClick === 'function') {
+                this.options.onCellClick({
+                    item: item,
+                    position: {x: e.clientX, y: e.clientY}
+                });
+            } else if (item.slug) {
+                // Автоматический переход на страницу игры, если не задан callback
+                window.location.href = '/games/' + item.slug + '/';
+            }
         }
     };
     
