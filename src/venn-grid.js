@@ -368,8 +368,14 @@
         this.dragStart = {x: 0, y: 0};
         this.panStart = {x: 0, y: 0};
         
+        // Tooltip состояние
+        this.hoverTimeout = null;
+        this.currentHoverItem = null;
+        this.tooltipElement = null;
+        
         this._setupEventListeners();
         this._resizeCanvas();
+        this._createTooltip();
     }
     
     // === ПУБЛИЧНЫЕ МЕТОДЫ ===
@@ -677,10 +683,104 @@
     
     VennGrid.prototype.destroy = function() {
         this._removeEventListeners();
+        this._removeTooltip();
         this.clear();
         this.data = null;
         this.sorted = null;
         this.subsorted = null;
+    };
+    
+    // === TOOLTIP МЕТОДЫ ===
+    
+    VennGrid.prototype._createTooltip = function() {
+        this.tooltipElement = document.createElement('div');
+        this.tooltipElement.style.cssText = `
+            position: fixed;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            max-width: 300px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        `;
+        document.body.appendChild(this.tooltipElement);
+    };
+    
+    VennGrid.prototype._removeTooltip = function() {
+        if (this.tooltipElement && this.tooltipElement.parentNode) {
+            this.tooltipElement.parentNode.removeChild(this.tooltipElement);
+        }
+        if (this.hoverTimeout) {
+            clearTimeout(this.hoverTimeout);
+        }
+    };
+    
+    VennGrid.prototype._showTooltip = function(item, x, y) {
+        if (!this.tooltipElement) return;
+        
+        // Формируем HTML контент
+        let html = '';
+        
+        // Обложка игры (если есть)
+        if (item.cover) {
+            html += `<img src="${item.cover}" style="width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px;" onerror="this.style.display='none'">`;
+        }
+        
+        // Название
+        html += `<div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">${item.title}</div>`;
+        
+        // Детали
+        const details = [];
+        if (item.genre) details.push(`<span style="color: #4a9eff;">🎮 ${item.genre}</span>`);
+        if (item.rating) details.push(`<span style="color: #ffd700;">★ ${item.rating}</span>`);
+        if (item.year) details.push(`<span style="color: #aaa;">📅 ${item.year}</span>`);
+        if (item.developer) details.push(`<span style="color: #aaa;">👨‍💻 ${item.developer}</span>`);
+        if (item.price !== undefined) {
+            const priceStr = item.price === 0 ? 'Free' : `$${item.price}`;
+            details.push(`<span style="color: #4caf50;">💰 ${priceStr}</span>`);
+        }
+        
+        if (details.length > 0) {
+            html += `<div style="font-size: 13px; line-height: 1.6;">${details.join('<br>')}</div>`;
+        }
+        
+        // Подсказка
+        html += `<div style="margin-top: 10px; font-size: 11px; color: #888; border-top: 1px solid #333; padding-top: 8px;">Кликните для перехода на страницу игры</div>`;
+        
+        this.tooltipElement.innerHTML = html;
+        this.tooltipElement.style.display = 'block';
+        
+        // Позиционирование (справа от курсора, с проверкой границ экрана)
+        const tooltipRect = this.tooltipElement.getBoundingClientRect();
+        let left = x + 15;
+        let top = y - tooltipRect.height / 2;
+        
+        // Проверка границ экрана
+        if (left + tooltipRect.width > window.innerWidth) {
+            left = x - tooltipRect.width - 15; // Слева от курсора
+        }
+        if (top < 10) top = 10;
+        if (top + tooltipRect.height > window.innerHeight - 10) {
+            top = window.innerHeight - tooltipRect.height - 10;
+        }
+        
+        this.tooltipElement.style.left = left + 'px';
+        this.tooltipElement.style.top = top + 'px';
+    };
+    
+    VennGrid.prototype._hideTooltip = function() {
+        if (this.tooltipElement) {
+            this.tooltipElement.style.display = 'none';
+        }
+        if (this.hoverTimeout) {
+            clearTimeout(this.hoverTimeout);
+            this.hoverTimeout = null;
+        }
+        this.currentHoverItem = null;
     };
     
     // === ПРИВАТНЫЕ МЕТОДЫ ===
@@ -721,12 +821,14 @@
         this._mouseMoveHandler = this._handleMouseMove.bind(this);
         this._mouseUpHandler = this._handleMouseUp.bind(this);
         this._clickHandler = this._handleClick.bind(this);
+        this._mouseLeaveHandler = this._handleMouseLeave.bind(this);
         
         this.canvas.addEventListener('wheel', this._wheelHandler);
         this.canvas.addEventListener('mousedown', this._mouseDownHandler);
         this.canvas.addEventListener('mousemove', this._mouseMoveHandler);
         this.canvas.addEventListener('mouseup', this._mouseUpHandler);
         this.canvas.addEventListener('click', this._clickHandler);
+        this.canvas.addEventListener('mouseleave', this._mouseLeaveHandler);
     };
     
     VennGrid.prototype._removeEventListeners = function() {
@@ -735,6 +837,11 @@
         this.canvas.removeEventListener('mousemove', this._mouseMoveHandler);
         this.canvas.removeEventListener('mouseup', this._mouseUpHandler);
         this.canvas.removeEventListener('click', this._clickHandler);
+        this.canvas.removeEventListener('mouseleave', this._mouseLeaveHandler);
+    };
+    
+    VennGrid.prototype._handleMouseLeave = function(e) {
+        this._hideTooltip();
     };
     
     VennGrid.prototype._handleWheel = function(e) {
@@ -775,13 +882,30 @@
     VennGrid.prototype._handleMouseMove = function(e) {
         const item = this.getCellAt(e.clientX, e.clientY);
         
-        if (item && this.options.onCellHover) {
+        // Обработка tooltip
+        if (item && item.id === (this.currentHoverItem ? this.currentHoverItem.id : null)) {
+            // Тот же элемент - ничего не делаем
+        } else if (item) {
+            // Новый элемент - запускаем таймер
+            this._hideTooltip();
+            this.currentHoverItem = item;
+            this.hoverTimeout = setTimeout(() => {
+                this._showTooltip(item, e.clientX, e.clientY);
+            }, 1000); // 1 секунда задержка
+        } else {
+            // Ушли с элемента - скрываем tooltip
+            this._hideTooltip();
+        }
+        
+        // Обработка hover callback (если задан)
+        if (item && this.options.onCellHover && typeof this.options.onCellHover === 'function') {
             this.options.onCellHover({
                 item: item,
                 position: {x: e.clientX, y: e.clientY}
             });
         }
         
+        // Обработка pan
         if (this.dragging && this.options.enablePan) {
             const dx = e.clientX - this.dragStart.x;
             const dy = e.clientY - this.dragStart.y;
