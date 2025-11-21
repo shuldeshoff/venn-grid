@@ -223,7 +223,7 @@
         const l1 = h1 > 0 ? Math.ceil(n1 / h1) : 0;
         const l2 = h2 > 0 ? Math.ceil(n2 / h2) : 0;
         
-        const h12 = Math.min(h1, h2);
+        let h12 = Math.min(h1, h2);
         let l12 = h12 > 0 ? Math.ceil(n12 / h12) : 0;
         let l123 = l12;
         let h123 = l123 > 0 ? Math.ceil(n123 / l123) : 0;
@@ -248,7 +248,7 @@
             l23 = h12 > 0 ? Math.ceil(n23 / h12) : 0;
             h23 = h12;
             l3 = l13 + l23 + l12;
-            h3 = l3 > 0 ? Math.ceil((n3 + n12) / l3) : 0;
+            h3 = l3 > 0 ? Math.ceil((n3 + l12) / l3) : 0;
             if (h3 === h12 && n3 - n13 - n23 > 0) {
                 h3 += 1;
             }
@@ -415,7 +415,7 @@
         
         this._drawGrid();
         
-        if (this.options.onRenderComplete) {
+        if (this.options.onRenderComplete && typeof this.options.onRenderComplete === 'function') {
             this.options.onRenderComplete();
         }
     };

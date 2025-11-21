@@ -5,6 +5,24 @@ All notable changes to VennGrid.js will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2025-11-21
+
+### Fixed
+- 🐛 **КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ**: Алгоритм расчета размеров сетки теперь полностью соответствует Godot версии
+- Исправлена коррекция n13, n23, n123 (теперь используется переприсваивание вместо временных переменных _corrected)
+- Добавлена коррекция n123 по формуле: `n123 = max(n123, l123 * h123)`
+- Добавлено обнуление нулевых размеров пересечений (h12, l12, h13, l13, h23, l23, h123, l123)
+- Исправлена ошибка "Assignment to constant variable" (изменены const на let для n13, n23, n123)
+
+### Added
+- ✅ Unit-тесты без визуализации (`test/unit-tests.js`)
+- ✅ Визуальные тесты с проверкой соответствия (`test/algorithm-test.html`)
+- 📖 Документация по исправлениям (`docs/ALGORITHM_FIX.md`)
+
+### Changed
+- Все тесты теперь проходят успешно
+- Визуализация полностью соответствует алгоритму Godot
+
 ## [2.0.0] - 2025-11-21
 
 ### Added
