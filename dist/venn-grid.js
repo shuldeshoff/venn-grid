@@ -349,8 +349,17 @@
     // === ГЛАВНЫЙ КЛАСС ===
     
     function VennGrid(canvas, options) {
+        // Если передан ID (строка), находим элемент
+        if (typeof canvas === 'string') {
+            canvas = document.getElementById(canvas);
+            if (!canvas) {
+                throw new Error('VennGrid: элемент canvas с ID "' + canvas + '" не найден');
+            }
+        }
+        
+        // Проверяем что это действительно canvas
         if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
-            throw new Error('VennGrid: первый аргумент должен быть HTMLCanvasElement');
+            throw new Error('VennGrid: первый аргумент должен быть HTMLCanvasElement или ID элемента canvas');
         }
         
         this.canvas = canvas;
