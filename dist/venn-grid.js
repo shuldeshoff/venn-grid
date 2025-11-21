@@ -832,7 +832,7 @@
                 });
             } else if (item.slug) {
                 // Автоматический переход на страницу игры, если не задан callback
-                window.location.href = '/games/' + item.slug + '/';
+                window.location.href = '/game/' + item.slug + '/';
             }
         }
     };
