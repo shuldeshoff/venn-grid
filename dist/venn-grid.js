@@ -840,7 +840,7 @@
             this.currentHoverItem = item;
             this.hoverTimeout = setTimeout(() => {
                 this._showTooltip(item, e.clientX, e.clientY);
-            }, 1000); // 1 секунда задержка
+            }, 500); // 0.5 секунды задержка
         } else {
             // Ушли с элемента - скрываем tooltip
             this._hideTooltip();
