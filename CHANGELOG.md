@@ -5,6 +5,27 @@ All notable changes to VennGrid.js will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-11-21
+
+### Added
+- 🖼️ **Tooltip с обложкой игры** - появляется при удержании курсора 1 секунду
+- 📸 Показ обложки игры (`cover` field)
+- 📝 Детальная информация в tooltip: название, жанр, рейтинг, год, разработчик, цена
+- 🎯 Умное позиционирование tooltip (справа/слева от курсора с учетом границ экрана)
+- ⚡ Мгновенное исчезновение при уходе курсора с ячейки
+- Поддержка placeholder обложек для тестирования
+
+### Changed
+- Улучшена обработка событий мыши (добавлен mouseleave)
+- Таймер 1000ms для задержки показа tooltip
+- Tooltip автоматически создается при инициализации
+- Tooltip удаляется при вызове destroy()
+
+### Technical
+- Добавлены методы: `_createTooltip()`, `_showTooltip()`, `_hideTooltip()`
+- Tooltip создается как DOM элемент вне canvas
+- Использует fixed позиционирование для корректного отображения
+
 ## [2.1.0] - 2025-11-21
 
 ### Added
