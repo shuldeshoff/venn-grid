@@ -489,97 +489,46 @@
         const centerX = x * cellSize + cellSize / 2;
         const centerY = y * cellSize + cellSize / 2;
         
-        // Определяем уровень детализации в зависимости от zoom
-        const zoom = this.zoom;
+        // Определяем видимый размер ячейки с учетом zoom
+        const visibleSize = cellSize * this.zoom;
         
-        if (cellSize * zoom < 30) {
-            // Минимальный размер: только точка или маленькая иконка
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
-            this.ctx.fill();
-        } else if (cellSize * zoom < 60) {
-            // Средний размер: иконка + сокращенное название
-            this._drawIcon(centerX, centerY - 8, Math.min(cellSize * 0.4, 16));
-            
-            this.ctx.fillStyle = '#000';
-            this.ctx.font = 'bold 9px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'top';
-            
-            const shortTitle = item.title.length > 6 ? item.title.substring(0, 6) + '...' : item.title;
-            this.ctx.fillText(shortTitle, centerX, centerY + 2);
-        } else {
-            // Полный размер: иконка + название + жанры/детали
-            const iconSize = Math.min(cellSize * 0.35, 24);
-            this._drawIcon(centerX, centerY - cellSize * 0.25, iconSize);
-            
-            // Название игры
-            this.ctx.fillStyle = '#000';
-            this.ctx.font = 'bold 11px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'top';
-            
-            const title = item.title.length > 12 ? item.title.substring(0, 12) + '...' : item.title;
-            this.ctx.fillText(title, centerX, centerY + 5);
-            
-            // Дополнительная информация (жанры, рейтинг и т.д.)
-            if (zoom > 1.5 && cellSize * zoom > 80) {
-                this.ctx.font = '9px Arial';
-                this.ctx.fillStyle = '#666';
-                
-                let details = [];
-                if (item.genre) details.push(item.genre);
-                if (item.rating) details.push('★' + item.rating);
-                if (item.year) details.push(String(item.year));
-                
-                if (details.length > 0) {
-                    const detailsText = details.join(' • ');
-                    this.ctx.fillText(detailsText, centerX, centerY + 18);
-                }
-            }
+        // Если ячейка слишком маленькая - ничего не рисуем
+        if (visibleSize < 25) {
+            this.ctx.restore();
+            return;
         }
         
-        this.ctx.restore();
-    };
-    
-    VennGrid.prototype._drawIcon = function(x, y, size) {
-        this.ctx.save();
+        // Только название, центрировано
+        this.ctx.fillStyle = '#000';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
         
-        // Рисуем простую иконку игры (геймпад)
-        this.ctx.strokeStyle = '#333';
-        this.ctx.lineWidth = 1.5;
-        this.ctx.fillStyle = '#fff';
+        // Выбираем размер шрифта в зависимости от размера ячейки
+        let fontSize, maxChars;
+        if (visibleSize < 40) {
+            fontSize = 8;
+            maxChars = 3; // Очень маленькая - только 3 символа
+        } else if (visibleSize < 60) {
+            fontSize = 10;
+            maxChars = 6; // Маленькая - 6 символов
+        } else if (visibleSize < 80) {
+            fontSize = 11;
+            maxChars = 10; // Средняя - 10 символов
+        } else {
+            fontSize = 12;
+            maxChars = 15; // Большая - 15 символов
+        }
         
-        // Основа геймпада
-        const width = size * 0.9;
-        const height = size * 0.6;
-        const radius = height / 2;
+        this.ctx.font = `${fontSize}px Arial`;
         
-        this.ctx.beginPath();
-        this.ctx.moveTo(x - width/2 + radius, y - height/2);
-        this.ctx.lineTo(x + width/2 - radius, y - height/2);
-        this.ctx.arc(x + width/2 - radius, y, radius, -Math.PI/2, Math.PI/2);
-        this.ctx.lineTo(x - width/2 + radius, y + height/2);
-        this.ctx.arc(x - width/2 + radius, y, radius, Math.PI/2, -Math.PI/2);
-        this.ctx.closePath();
-        this.ctx.fill();
-        this.ctx.stroke();
+        // Обрезаем название если не влезает
+        let displayText = item.title;
+        if (displayText.length > maxChars) {
+            displayText = displayText.substring(0, maxChars - 1) + '…';
+        }
         
-        // Крестовина (D-pad) слева
-        const dpadSize = size * 0.15;
-        const dpadX = x - width/4;
-        this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(dpadX - dpadSize/2, y - dpadSize*1.5, dpadSize, dpadSize*3);
-        this.ctx.fillRect(dpadX - dpadSize*1.5, y - dpadSize/2, dpadSize*3, dpadSize);
-        
-        // Кнопки справа
-        const btnRadius = size * 0.08;
-        const btnX = x + width/4;
-        this.ctx.beginPath();
-        this.ctx.arc(btnX, y - size*0.1, btnRadius, 0, Math.PI * 2);
-        this.ctx.arc(btnX + size*0.15, y + size*0.05, btnRadius, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Рисуем текст
+        this.ctx.fillText(displayText, centerX, centerY);
         
         this.ctx.restore();
     };
