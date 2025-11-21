@@ -504,27 +504,36 @@
         this.ctx.textBaseline = 'middle';
         
         // Выбираем размер шрифта в зависимости от размера ячейки
-        let fontSize, maxChars;
+        // Чем больше ячейка - тем крупнее шрифт
+        let fontSize;
         if (visibleSize < 40) {
             fontSize = 8;
-            maxChars = 3; // Очень маленькая - только 3 символа
         } else if (visibleSize < 60) {
             fontSize = 10;
-            maxChars = 6; // Маленькая - 6 символов
-        } else if (visibleSize < 80) {
-            fontSize = 11;
-            maxChars = 10; // Средняя - 10 символов
-        } else {
+        } else if (visibleSize < 100) {
             fontSize = 12;
-            maxChars = 15; // Большая - 15 символов
+        } else if (visibleSize < 150) {
+            fontSize = 14;
+        } else {
+            fontSize = Math.min(18, Math.floor(visibleSize / 10)); // Масштабируемый шрифт
         }
         
         this.ctx.font = `${fontSize}px Arial`;
         
-        // Обрезаем название если не влезает
+        // Добавляем padding внутри ячейки (10% с каждой стороны)
+        const maxWidth = visibleSize * 0.8;
+        
+        // Измеряем текст и обрезаем если не влезает
         let displayText = item.title;
-        if (displayText.length > maxChars) {
-            displayText = displayText.substring(0, maxChars - 1) + '…';
+        let textWidth = this.ctx.measureText(displayText).width;
+        
+        // Если текст не влезает - обрезаем с многоточием
+        if (textWidth > maxWidth) {
+            while (displayText.length > 1 && textWidth > maxWidth) {
+                displayText = displayText.substring(0, displayText.length - 1);
+                textWidth = this.ctx.measureText(displayText + '…').width;
+            }
+            displayText = displayText + '…';
         }
         
         // Рисуем текст
