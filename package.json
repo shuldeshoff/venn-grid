@@ -1,8 +1,17 @@
 {
   "name": "venn-grid",
-  "version": "2.3.0",
-  "description": "Grid-based Venn diagram visualization library for game sets",
+  "version": "2.3.4",
+  "description": "Grid-based Venn diagram visualization library for game sets with interactive tooltips and zoom",
   "main": "dist/venn-grid.min.js",
+  "files": [
+    "dist/",
+    "src/",
+    "docs/",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "dev": "cp src/venn-grid.js dist/venn-grid.js",
     "build": "terser src/venn-grid.js -o dist/venn-grid.min.js --compress --mangle --comments false",
@@ -12,12 +21,30 @@
     "terser": "^5.16.0",
     "nodemon": "^2.0.20"
   },
-  "keywords": ["venn", "diagram", "visualization", "grid", "canvas", "games", "django"],
+  "keywords": [
+    "venn",
+    "diagram",
+    "visualization",
+    "grid",
+    "canvas",
+    "games",
+    "django",
+    "interactive",
+    "tooltip",
+    "zoom",
+    "pan",
+    "javascript",
+    "library"
+  ],
   "author": "VennGrid Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/venn-grid"
-  }
+    "url": "https://github.com/shuldeshoff/venn-grid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shuldeshoff/venn-grid/issues"
+  },
+  "homepage": "https://github.com/shuldeshoff/venn-grid#readme"
 }
 

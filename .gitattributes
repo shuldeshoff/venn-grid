@@ -1,0 +1,32 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# JavaScript
+*.js text eol=lf
+*.json text eol=lf
+
+# HTML/CSS
+*.html text eol=lf
+*.css text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+
+# Exclude from GitHub language statistics
+docs/*.md linguist-documentation
+examples/*.html linguist-documentation
+test/*.js linguist-vendored
+
