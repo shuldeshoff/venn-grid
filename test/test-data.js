@@ -102,14 +102,25 @@ const subareaDemo = {
                 {id: 4, title: 'Total War Warhammer', slug: 'tw-warhammer', rating: 8.9, year: 2016, price: 49.99},
                 {id: 5, title: 'StarCraft II', slug: 'sc2', rating: 9.2, year: 2010, price: 0}
             ]
+        },
+        {
+            id: 'set2',
+            label: 'Multiplayer Games',
+            items: [
+                {id: 5, title: 'StarCraft II', slug: 'sc2', rating: 9.2, year: 2010, price: 0},
+                {id: 6, title: 'Age of Empires IV', slug: 'aoe4', rating: 8.5, year: 2021, price: 59.99},
+                {id: 4, title: 'Total War Warhammer', slug: 'tw-warhammer', rating: 8.9, year: 2016, price: 49.99}
+            ]
         }
     ],
     subareaFilters: {
         set1: [
             {field: 'rating', operator: '>=', value: 9.0, label: 'Топ рейтинг'},
-            {field: 'rating', operator: '<', value: 9.0, label: 'Хороший рейтинг'},
-            {field: 'year', operator: '>=', value: 2010, label: 'Новые'},
-            {field: 'year', operator: '<', value: 2010, label: 'Старые'}
+            {field: 'rating', operator: '<', value: 9.0, label: 'Хороший рейтинг'}
+        ],
+        set2: [
+            {field: 'price', operator: '==', value: 0, label: 'Бесплатные'},
+            {field: 'price', operator: '>', value: 0, label: 'Платные'}
         ]
     }
 };
