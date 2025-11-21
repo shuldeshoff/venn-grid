@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hover</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #venn-canvas {
+            border: 2px solid #ff0000;
+            display: block;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #333;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Тест Hover</h1>
+    <canvas id="venn-canvas"></canvas>
+    <div id="debug">Наведите курсор на canvas...</div>
+    
+    <script src="../src/venn-grid.js?v=2.3.4"></script>
+    <script>
+        const debug = document.getElementById('debug');
+        
+        function log(msg) {
+            console.log(msg);
+            debug.innerHTML += '<br>' + msg;
+        }
+        
+        log('🚀 Начало инициализации...');
+        
+        const vennGrid = new VennGrid('venn-canvas', {
+            cellSize: 80,
+            padding: 20
+        });
+        
+        log('✅ VennGrid создан');
+        log('📊 Canvas: ' + vennGrid.canvas.width + 'x' + vennGrid.canvas.height);
+        
+        const testData = {
+            sets: [
+                {
+                    id: 'set1',
+                    label: 'Set 1',
+                    items: [
+                        {id: 1, title: 'Game 1', slug: 'game1', cover: 'https://via.placeholder.com/300x400/FF0000/FFFFFF?text=Game1'},
+                        {id: 2, title: 'Game 2', slug: 'game2', cover: 'https://via.placeholder.com/300x400/00FF00/FFFFFF?text=Game2'},
+                        {id: 3, title: 'Game 3', slug: 'game3', cover: 'https://via.placeholder.com/300x400/0000FF/FFFFFF?text=Game3'}
+                    ]
+                },
+                {
+                    id: 'set2',
+                    label: 'Set 2',
+                    items: [
+                        {id: 2, title: 'Game 2', slug: 'game2', cover: 'https://via.placeholder.com/300x400/00FF00/FFFFFF?text=Game2'},
+                        {id: 4, title: 'Game 4', slug: 'game4', cover: 'https://via.placeholder.com/300x400/FFFF00/FFFFFF?text=Game4'}
+                    ]
+                }
+            ]
+        };
+        
+        vennGrid.setData(testData);
+        log('✅ Данные загружены');
+        log('📏 Grid размер: ' + vennGrid.gridSizes.width + 'x' + vennGrid.gridSizes.height);
+        log('🔢 Всего элементов: ' + vennGrid.getTotalItems());
+        
+        // Проверяем tooltip
+        log('🎯 Tooltip элемент: ' + (vennGrid.tooltipElement ? 'создан' : 'НЕ СОЗДАН!'));
+        
+        // Добавляем отладку hover
+        const canvas = document.getElementById('venn-canvas');
+        canvas.addEventListener('mousemove', function(e) {
+            const item = vennGrid.getCellAt(e.clientX, e.clientY);
+            if (item) {
+                log('🎮 Hover: ' + item.title + ' (id=' + item.id + ')');
+            }
+        });
+        
+        log('');
+        log('👉 Наведите курсор на ячейки и подождите 0.5 секунды!');
+    </script>
+</body>
+</html>
+
