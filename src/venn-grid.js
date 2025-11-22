@@ -841,7 +841,7 @@
         }
         
         // Подсказка
-        html += `<div style="margin-top: 10px; font-size: 11px; color: #888; border-top: 1px solid #333; padding-top: 8px;">Кликните для перехода на страницу игры</div>`;
+        html += `<div style="margin-top: 10px; font-size: 11px; color: #888; border-top: 1px solid #333; padding-top: 8px;">Двойной клик для перехода на страницу игры</div>`;
         
         this.tooltipElement.innerHTML = html;
         this.tooltipElement.style.display = 'block';
@@ -913,6 +913,7 @@
         this._mouseMoveHandler = this._handleMouseMove.bind(this);
         this._mouseUpHandler = this._handleMouseUp.bind(this);
         this._clickHandler = this._handleClick.bind(this);
+        this._doubleClickHandler = this._handleDoubleClick.bind(this);
         this._mouseLeaveHandler = this._handleMouseLeave.bind(this);
         
         this.canvas.addEventListener('wheel', this._wheelHandler);
@@ -920,6 +921,7 @@
         this.canvas.addEventListener('mousemove', this._mouseMoveHandler);
         this.canvas.addEventListener('mouseup', this._mouseUpHandler);
         this.canvas.addEventListener('click', this._clickHandler);
+        this.canvas.addEventListener('dblclick', this._doubleClickHandler);
         this.canvas.addEventListener('mouseleave', this._mouseLeaveHandler);
     };
     
@@ -929,6 +931,7 @@
         this.canvas.removeEventListener('mousemove', this._mouseMoveHandler);
         this.canvas.removeEventListener('mouseup', this._mouseUpHandler);
         this.canvas.removeEventListener('click', this._clickHandler);
+        this.canvas.removeEventListener('dblclick', this._doubleClickHandler);
         this.canvas.removeEventListener('mouseleave', this._mouseLeaveHandler);
     };
     
@@ -951,13 +954,28 @@
         const item = this.getCellAt(e.clientX, e.clientY);
         
         if (item) {
+            // Одиночный клик - только callback без перехода
             if (this.options.onCellClick && typeof this.options.onCellClick === 'function') {
                 this.options.onCellClick({
                     item: item,
                     position: {x: e.clientX, y: e.clientY}
                 });
+            }
+        }
+    };
+    
+    VennGrid.prototype._handleDoubleClick = function(e) {
+        const item = this.getCellAt(e.clientX, e.clientY);
+        
+        if (item) {
+            if (this.options.onCellDoubleClick && typeof this.options.onCellDoubleClick === 'function') {
+                // Пользовательский callback для двойного клика
+                this.options.onCellDoubleClick({
+                    item: item,
+                    position: {x: e.clientX, y: e.clientY}
+                });
             } else if (item.slug) {
-                // Автоматический переход на страницу игры, если не задан callback
+                // Автоматический переход на страницу игры при двойном клике
                 window.location.href = '/game/' + item.slug + '/';
             }
         }
