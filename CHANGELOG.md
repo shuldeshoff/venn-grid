@@ -5,6 +5,23 @@ All notable changes to VennGrid.js will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2025-11-22
+
+### Changed
+- 🖱️ **Двойной клик вместо одиночного** для перехода на страницу игры
+  - Одиночный клик теперь только для `onCellClick` callback
+  - Двойной клик (`dblclick`) → переход на `/game/<slug>/`
+  - Обновлен текст подсказки в tooltip: "Двойной клик для перехода"
+
+### Added
+- Новый метод `_handleDoubleClick()` для обработки двойного клика
+- Новый callback `onCellDoubleClick` в опциях библиотеки
+- Event listener для `dblclick` события
+
+### Technical
+- Разделение логики: одиночный клик не вызывает переход
+- Сохранение обратной совместимости для `onCellClick`
+
 ## [2.4.0] - 2025-11-22
 
 ### Added
