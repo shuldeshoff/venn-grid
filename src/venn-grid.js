@@ -1,7 +1,7 @@
 /**
- * VennGrid.js v2.0.0
- * Grid-based Venn diagram visualization library
- * https://github.com/username/venn-grid
+ * VennGrid.js v2.4.0
+ * Grid-based Venn diagram visualization library with cover images
+ * https://github.com/shuldeshoff/venn-grid
  * Licensed under MIT
  */
 (function(window) {
@@ -382,6 +382,9 @@
         this.currentHoverItem = null;
         this.tooltipElement = null;
         
+        // Кэш изображений для обложек
+        this.imageCache = new Map();
+        
         this._setupEventListeners();
         this._resizeCanvas();
         this._createTooltip();
@@ -504,12 +507,138 @@
             return;
         }
         
-        // Только название, центрировано
+        // Если есть обложка - рисуем миниатюру
+        if (item.cover) {
+            this._drawCellCover(x, y, item, cellSize);
+        } else {
+            // Если нет обложки - рисуем только название
+            this._drawCellText(x, y, item, cellSize);
+        }
+        
+        this.ctx.restore();
+    };
+    
+    VennGrid.prototype._drawCellCover = function(x, y, item, cellSize) {
+        // Проверяем есть ли изображение в кэше
+        const cacheKey = item.cover;
+        
+        if (!this.imageCache) {
+            this.imageCache = new Map();
+        }
+        
+        if (this.imageCache.has(cacheKey)) {
+            const img = this.imageCache.get(cacheKey);
+            if (img.complete && img.naturalHeight > 0) {
+                this._drawImage(x, y, img, cellSize);
+            } else {
+                // Изображение еще загружается - рисуем placeholder
+                this._drawCellPlaceholder(x, y, item, cellSize);
+            }
+        } else {
+            // Загружаем изображение
+            const img = new Image();
+            img.crossOrigin = 'anonymous'; // Для CORS
+            
+            img.onload = () => {
+                this.imageCache.set(cacheKey, img);
+                // Перерисовываем после загрузки
+                this.render();
+            };
+            
+            img.onerror = () => {
+                // Ошибка загрузки - помечаем как failed
+                this.imageCache.set(cacheKey, null);
+                this.render();
+            };
+            
+            img.src = item.cover;
+            this.imageCache.set(cacheKey, img);
+            
+            // Пока загружается - рисуем placeholder
+            this._drawCellPlaceholder(x, y, item, cellSize);
+        }
+    };
+    
+    VennGrid.prototype._drawImage = function(x, y, img, cellSize) {
+        const padding = cellSize * 0.1; // 10% padding
+        const imgSize = cellSize - padding * 2;
+        const imgX = x * cellSize + padding;
+        const imgY = y * cellSize + padding;
+        
+        // Сохраняем контекст
+        this.ctx.save();
+        
+        // Создаем clip path для скругленных углов
+        const radius = Math.min(imgSize * 0.1, 4); // Радиус скругления
+        this.ctx.beginPath();
+        this.ctx.moveTo(imgX + radius, imgY);
+        this.ctx.lineTo(imgX + imgSize - radius, imgY);
+        this.ctx.quadraticCurveTo(imgX + imgSize, imgY, imgX + imgSize, imgY + radius);
+        this.ctx.lineTo(imgX + imgSize, imgY + imgSize - radius);
+        this.ctx.quadraticCurveTo(imgX + imgSize, imgY + imgSize, imgX + imgSize - radius, imgY + imgSize);
+        this.ctx.lineTo(imgX + radius, imgY + imgSize);
+        this.ctx.quadraticCurveTo(imgX, imgY + imgSize, imgX, imgY + imgSize - radius);
+        this.ctx.lineTo(imgX, imgY + radius);
+        this.ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
+        this.ctx.closePath();
+        this.ctx.clip();
+        
+        // Рисуем изображение с сохранением пропорций (cover)
+        const aspectRatio = img.width / img.height;
+        let drawWidth, drawHeight, drawX, drawY;
+        
+        if (aspectRatio > 1) {
+            // Горизонтальное изображение
+            drawHeight = imgSize;
+            drawWidth = imgSize * aspectRatio;
+            drawX = imgX - (drawWidth - imgSize) / 2;
+            drawY = imgY;
+        } else {
+            // Вертикальное изображение
+            drawWidth = imgSize;
+            drawHeight = imgSize / aspectRatio;
+            drawX = imgX;
+            drawY = imgY - (drawHeight - imgSize) / 2;
+        }
+        
+        this.ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        
+        this.ctx.restore();
+    };
+    
+    VennGrid.prototype._drawCellPlaceholder = function(x, y, item, cellSize) {
+        // Placeholder пока изображение загружается
+        const padding = cellSize * 0.1;
+        const size = cellSize - padding * 2;
+        const px = x * cellSize + padding;
+        const py = y * cellSize + padding;
+        
+        // Серый фон
+        this.ctx.fillStyle = 'rgba(200, 200, 200, 0.3)';
+        this.ctx.fillRect(px, py, size, size);
+        
+        // Иконка загрузки (простой спиннер)
+        const centerX = x * cellSize + cellSize / 2;
+        const centerY = y * cellSize + cellSize / 2;
+        const iconSize = Math.min(size * 0.4, 20);
+        
+        this.ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, iconSize / 2, 0, Math.PI * 1.5);
+        this.ctx.stroke();
+    };
+    
+    VennGrid.prototype._drawCellText = function(x, y, item, cellSize) {
+        // Рисуем только текст (когда нет обложки)
+        const centerX = x * cellSize + cellSize / 2;
+        const centerY = y * cellSize + cellSize / 2;
+        
         this.ctx.fillStyle = '#000';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         
-        // Выбираем размер шрифта в зависимости от реального размера ячейки
+        // Выбираем размер шрифта
         let fontSize;
         if (cellSize < 30) {
             fontSize = 7;
@@ -522,19 +651,18 @@
         } else if (cellSize < 100) {
             fontSize = 11;
         } else {
-            fontSize = 12; // Максимальный размер 12px
+            fontSize = 12;
         }
         
         this.ctx.font = `${fontSize}px Arial`;
         
-        // Максимальная ширина текста = 85% от ширины ячейки (padding 7.5% с каждой стороны)
+        // Максимальная ширина текста
         const maxWidth = cellSize * 0.85;
         
-        // Измеряем текст и обрезаем если не влезает
+        // Обрезаем текст если не влезает
         let displayText = item.title;
         let textWidth = this.ctx.measureText(displayText).width;
         
-        // Если текст не влезает - обрезаем посимвольно с многоточием
         if (textWidth > maxWidth) {
             while (displayText.length > 1) {
                 displayText = displayText.substring(0, displayText.length - 1);
@@ -546,8 +674,6 @@
         
         // Рисуем текст
         this.ctx.fillText(displayText, centerX, centerY);
-        
-        this.ctx.restore();
     };
     
     VennGrid.prototype.zoomIn = function() {
