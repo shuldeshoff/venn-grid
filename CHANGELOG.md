@@ -5,6 +5,31 @@ All notable changes to VennGrid.js will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-11-22
+
+### Added
+- 🖼️ **Миниатюры обложек в ячейках** - визуальная индикация контента
+  - Автоматическое отображение обложки игры (`item.cover`) внутри каждой ячейки
+  - Кэширование изображений для производительности
+  - Placeholder анимация во время загрузки
+  - Fallback на текст если обложка отсутствует
+- Скругленные углы для обложек (border-radius)
+- Адаптивный размер обложки (80% от ячейки с padding 10%)
+- CORS support для загрузки изображений с внешних источников
+
+### Technical
+- Новый метод `_drawCellCover()` - рендеринг миниатюр
+- Новый метод `_drawImage()` - отрисовка с сохранением пропорций (cover mode)
+- Новый метод `_drawCellPlaceholder()` - placeholder во время загрузки
+- Рефакторинг `_drawCellLabel()` - разделение логики текст/изображение
+- `imageCache` Map для хранения загруженных изображений
+- Обработка ошибок загрузки изображений
+
+### Improved
+- Производительность рендеринга за счет кэширования
+- Визуальная привлекательность ячеек
+- UX: пользователь видит контент без наведения
+
 ## [2.3.0] - 2025-11-21
 
 ### Changed
