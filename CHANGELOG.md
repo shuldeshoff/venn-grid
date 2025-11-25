@@ -5,6 +5,31 @@ All notable changes to VennGrid.js will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-11-25
+
+### Fixed
+- 🐛 **КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ**: Расчёт размеров сетки теперь учитывает размеры canvas
+  - `calculateGridSizes()` теперь принимает `canvasWidth`, `canvasHeight`, `cellSize`
+  - Вычисляются максимально возможные размеры сетки: `maxColumns = floor(canvasWidth / cellSize)`, `maxRows = floor(canvasHeight / cellSize)`
+  - Итоговые размеры ограничиваются размерами canvas: `width = min(calculatedWidth, maxColumns)`, `height = min(calculatedHeight, maxRows)`
+  - **Результат**: Все элементы теперь отображаются корректно, сетка не превышает границы canvas
+
+### Changed
+- Сигнатура функции `calculateGridSizes()`:
+  - Было: `calculateGridSizes(sorted, subsorted, aspectRatio)`
+  - Стало: `calculateGridSizes(sorted, subsorted, aspectRatio, canvasWidth, canvasHeight, cellSize)`
+- Обновлен вызов в `setData()` с передачей размеров canvas и cellSize
+
+### Technical
+- Добавлена проверка на `Infinity` для случаев когда canvas или cellSize не заданы
+- Гарантия что сетка всегда умещается в видимую область canvas
+- Исправлен баг когда при больших наборах данных отображались только первые 24-50 элементов
+
+### Impact
+- Критичность: **HIGH**
+- Затронутые версии: v2.0.0 - v2.4.1
+- Исправлено поведение для наборов данных > 50 элементов
+
 ## [2.4.1] - 2025-11-22
 
 ### Changed

@@ -190,7 +190,7 @@
     }
     
     // Этап 5: Расчет размеров сетки
-    function calculateGridSizes(sorted, subsorted, aspectRatio) {
+    function calculateGridSizes(sorted, subsorted, aspectRatio, canvasWidth, canvasHeight, cellSize) {
         const n1a = subsorted.set1.a.length;
         const n1b = subsorted.set1.b.length;
         const n1c = subsorted.set1.c.length;
@@ -217,6 +217,10 @@
             return {width: 0, height: 0, l1: 0, l2: 0, l3: 0, h1: 0, h2: 0, h3: 0,
                     l12: 0, l13: 0, l23: 0, l123: 0, h12: 0, h13: 0, h23: 0, h123: 0};
         }
+        
+        // Вычисляем максимально возможные размеры сетки на основе canvas
+        const maxColumns = canvasWidth && cellSize ? Math.floor(canvasWidth / cellSize) : Infinity;
+        const maxRows = canvasHeight && cellSize ? Math.floor(canvasHeight / cellSize) : Infinity;
         
         const h1 = n1 > 0 ? Math.ceil(Math.sqrt(n1) / aspectRatio) : 0;
         const h2 = n2 > 0 ? Math.ceil(Math.sqrt(n2) / aspectRatio) : 0;
@@ -254,8 +258,12 @@
             }
         }
         
-        const width = n123 > 0 ? l1 + l2 - l123 : l1 + l2 - l12;
-        const height = n123 > 0 ? h1 + h3 - h123 : h1 + h3 - h12;
+        let width = n123 > 0 ? l1 + l2 - l123 : l1 + l2 - l12;
+        let height = n123 > 0 ? h1 + h3 - h123 : h1 + h3 - h12;
+        
+        // Ограничиваем размеры сетки размерами canvas
+        width = Math.min(Math.max(width, 0), maxColumns);
+        height = Math.min(Math.max(height, 0), maxRows);
         
         // Обнуление нулевых размеров (из Godot Grid.gd строки 276-287)
         if (h12 === 0 || l12 === 0) { h12 = 0; l12 = 0; }
@@ -264,8 +272,8 @@
         if (h123 === 0 || l123 === 0) { h123 = 0; l123 = 0; }
         
         return {
-            width: Math.max(width, 0),
-            height: Math.max(height, 0),
+            width,
+            height,
             l1, l2, l3, h1, h2, h3,
             l12, l13, l23, l123,
             h12, h13, h23, h123
@@ -423,7 +431,14 @@
         }
         
         shuffleAreas(this.sorted, this.subsorted);
-        this.gridSizes = calculateGridSizes(this.sorted, this.subsorted, this.options.aspectRatio);
+        this.gridSizes = calculateGridSizes(
+            this.sorted, 
+            this.subsorted, 
+            this.options.aspectRatio,
+            this.canvas.width,
+            this.canvas.height,
+            this.options.cellSize
+        );
         
         this.render();
     };
