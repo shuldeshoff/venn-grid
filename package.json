@@ -1,6 +1,6 @@
 {
   "name": "venn-grid",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Grid-based Venn diagram visualization library for game sets with interactive tooltips and zoom",
   "main": "dist/venn-grid.min.js",
   "files": [
