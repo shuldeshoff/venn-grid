@@ -228,8 +228,11 @@
         let n13 = sorted.intersection13.length + n123;
         let n23 = sorted.intersection23.length + n123;
         
-        const n1 = sorted.set1.length + n12 + n13 + n1a + n1b + n1c + n1d;
-        const n2 = sorted.set2.length + n12 + n23 + n2a + n2b + n2c + n2d;
+        // ВАЖНО: Для 2 множеств не включаем n13 и n23 в расчёт n1 и n2
+        // так как эти пересечения существуют только при наличии 3-го множества
+        const hasSet3 = sorted.set3.length > 0;
+        const n1 = sorted.set1.length + n12 + (hasSet3 ? n13 : 0) + n1a + n1b + n1c + n1d;
+        const n2 = sorted.set2.length + n12 + (hasSet3 ? n23 : 0) + n2a + n2b + n2c + n2d;
         const n3 = sorted.set3.length + n13 + n23 + n3a + n3b + n3c + n3d;
         
         if (n1 === 0 && n2 === 0 && n3 === 0) {
@@ -280,9 +283,25 @@
         let width = n123 > 0 ? l1 + l2 - l123 : l1 + l2 - l12;
         let height = n123 > 0 ? h1 + h3 - h123 : h1 + h3 - h12;
         
-        // Ограничиваем размеры сетки размерами canvas
-        width = Math.min(Math.max(width, 0), maxColumns);
-        height = Math.min(Math.max(height, 0), maxRows);
+        // ВАЖНО: Проверяем что сетка достаточно большая для всех элементов
+        const totalItems = sorted.set1.length + sorted.set2.length + sorted.set3.length +
+                          sorted.intersection12.length + sorted.intersection13.length +
+                          sorted.intersection23.length + sorted.intersection123.length +
+                          subsorted.set1.a.length + subsorted.set1.b.length + subsorted.set1.c.length + subsorted.set1.d.length +
+                          subsorted.set2.a.length + subsorted.set2.b.length + subsorted.set2.c.length + subsorted.set2.d.length +
+                          subsorted.set3.a.length + subsorted.set3.b.length + subsorted.set3.c.length + subsorted.set3.d.length;
+        
+        const gridCapacity = width * height;
+        
+        // Если сетка слишком маленькая - увеличиваем пропорционально
+        if (gridCapacity < totalItems && totalItems > 0) {
+            const scaleFactor = Math.ceil(Math.sqrt(totalItems / gridCapacity));
+            width = Math.ceil(width * scaleFactor);
+            height = Math.ceil(height * scaleFactor);
+        }
+        
+        width = Math.max(width, 0);
+        height = Math.max(height, 0);
         
         // Обнуление нулевых размеров (из Godot Grid.gd строки 276-287)
         if (h12 === 0 || l12 === 0) { h12 = 0; l12 = 0; }

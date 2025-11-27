@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VennGrid - Тесты размеров сетки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #4a9eff;
+        }
+        
+        .info {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4a9eff;
+        }
+        
+        .info h3 {
+            color: #4a9eff;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        button:hover {
+            background: #3a8eef;
+        }
+        
+        #console {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            color: #4ade80;
+        }
+        
+        .error {
+            color: #f87171;
+        }
+        
+        .warning {
+            color: #fbbf24;
+        }
+        
+        .info-text {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 VennGrid - Тесты размеров сетки</h1>
+        
+        <div class="info">
+            <h3>📋 Описание тестов</h3>
+            <p><strong>Тест 1:</strong> Одно множество (50 элементов)</p>
+            <p><strong>Тест 2:</strong> Два множества (8 уникальных элементов, 1 пересечение)</p>
+            <p><strong>Тест 3:</strong> Два множества - большой набор (40 уникальных, 5 пересечений)</p>
+            <p><strong>Тест 4:</strong> Три множества (4 уникальных элемента, все пересечения)</p>
+            <p style="margin-top: 15px; color: #fbbf24;">
+                <strong>⚠️ Критический тест:</strong> Тест 2 и 3 проверяют исправление бага с двумя критериями.
+            </p>
+        </div>
+        
+        <button onclick="runAllTests()">▶️ Запустить все тесты</button>
+        
+        <div id="console"></div>
+    </div>
+    
+    <script src="../src/venn-grid.js"></script>
+    <script src="grid-size-tests.js"></script>
+    <script>
+        // Перехватываем console.log для отображения в HTML
+        const consoleDiv = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        function formatMessage(message, type = 'log') {
+            const className = type === 'error' ? 'error' : 
+                            message.includes('✅') ? 'success' : 
+                            message.includes('❌') ? 'error' :
+                            message.includes('⚠️') || message.includes('✓') ? 'warning' :
+                            message.includes('===') ? 'info-text' : '';
+            
+            const span = document.createElement('span');
+            if (className) span.className = className;
+            span.textContent = message;
+            consoleDiv.appendChild(span);
+            consoleDiv.appendChild(document.createTextNode('\n'));
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            formatMessage(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            formatMessage(args.join(' '), 'error');
+        };
+        
+        // Автоматически запускаем тесты при загрузке
+        window.addEventListener('load', () => {
+            console.log('Страница загружена. Нажмите кнопку для запуска тестов.\n');
+        });
+    </script>
+</body>
+</html>
+
