@@ -5,6 +5,61 @@ All notable changes to VennGrid.js will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-11-28
+
+### Added
+- 📱 **ПОЛНАЯ ПОДДЕРЖКА МОБИЛЬНЫХ УСТРОЙСТВ**
+  - ✅ Адаптивный размер ячеек (cellSize) в зависимости от ширины экрана
+    - Телефоны (< 480px): cellSize × 0.3 (минимум 10px)
+    - Планшеты (480-768px): cellSize × 0.5 (минимум 15px)
+    - Десктопы (> 768px): cellSize без изменений
+  - ✅ Touch-жесты для навигации
+    - Одним пальцем: панорамирование (swipe)
+    - Двумя пальцами: pinch-to-zoom (зум щипком)
+  - ✅ Автоматический resize при изменении размера окна/ориентации
+    - Debounce 300ms для оптимизации производительности
+    - Пересчёт cellSize и gridSizes при изменении размера
+  - ✅ Адаптивное позиционирование tooltip
+    - На мобильных: tooltip по центру внизу экрана
+    - На десктопах: tooltip рядом с курсором (как раньше)
+  - ✅ Адаптивные стили tooltip
+    - Мобильные: max-width calc(100vw - 40px), padding 12px, font-size 14px
+    - Десктопы: max-width 300px, padding 15px, font-size 16px
+
+### New Options
+- `adaptiveCellSize`: boolean (default: true) - автоматически адаптировать cellSize
+- `mobileBreakpoint`: number (default: 768) - граница между мобильными и десктопом
+- `tabletBreakpoint`: number (default: 480) - граница между телефонами и планшетами
+- `mobileCellSizeMultiplier`: number (default: 0.3) - множитель cellSize для телефонов
+- `tabletCellSizeMultiplier`: number (default: 0.5) - множитель cellSize для планшетов
+
+### New Methods
+- `_getAdaptiveCellSize(baseCellSize)` - рассчитывает адаптивный размер ячейки
+- `_handleTouchStart(e)` - обработчик начала touch-события
+- `_handleTouchMove(e)` - обработчик движения touch-события
+- `_handleTouchEnd(e)` - обработчик окончания touch-события
+- `_getTouchDistance(touches)` - вычисляет расстояние между двумя касаниями
+- `_handleResize()` - обработчик изменения размера окна с debounce
+
+### Changed
+- Метод `_createTooltip()` теперь применяет адаптивные стили в зависимости от ширины экрана
+- Метод `_showTooltip()` теперь позиционирует tooltip адаптивно (центр внизу на мобильных)
+- Конструктор теперь инициализирует переменные для touch-событий (`pinching`, `lastPinchDistance`)
+- `_setupEventListeners()` добавляет обработчики touch-событий и resize
+- `_removeEventListeners()` удаляет обработчики touch-событий и resize
+- `destroy()` теперь очищает таймаут resize
+
+### Technical
+- Touch-события используют `{ passive: false }` для предотвращения дефолтного поведения браузера
+- Resize с debounce 300ms для оптимизации производительности
+- При resize пересчитывается cellSize и gridSizes только если `adaptiveCellSize: true`
+
+### Impact
+- Критичность: **MAJOR FEATURE**
+- Влияние: библиотека теперь полностью работает на мобильных устройствах
+- Обратная совместимость: ✅ полная (все существующие проекты продолжат работать)
+- Производительность: минимальное влияние, debounce оптимизирует resize
+
 ## [2.7.0] - 2025-11-27
 
 ### Fixed

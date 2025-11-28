@@ -1,6 +1,6 @@
 /**
- * VennGrid.js v2.4.0
- * Grid-based Venn diagram visualization library with cover images
+ * VennGrid.js v2.8.0
+ * Grid-based Venn diagram visualization library with cover images and mobile support
  * https://github.com/shuldeshoff/venn-grid
  * Licensed under MIT
  */
@@ -82,7 +82,14 @@
         onCellClick: null,
         onCellHover: null,
         onZoomChange: null,
-        onRenderComplete: null
+        onRenderComplete: null,
+        
+        // Опции для мобильных устройств
+        adaptiveCellSize: true,         // Автоматически адаптировать cellSize
+        mobileBreakpoint: 768,          // Граница между мобильными и десктопом
+        tabletBreakpoint: 480,          // Граница между телефонами и планшетами
+        mobileCellSizeMultiplier: 0.3,  // Множитель для телефонов
+        tabletCellSizeMultiplier: 0.5   // Множитель для планшетов
     };
     
     // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
@@ -412,6 +419,11 @@
         this.ctx = canvas.getContext('2d');
         this.options = mergeOptions(DEFAULT_OPTIONS, options || {});
         
+        // Адаптивный cellSize для мобильных (если не задан явно)
+        if (this.options.adaptiveCellSize && (!options || !options.hasOwnProperty('cellSize'))) {
+            this.options.cellSize = this._getAdaptiveCellSize(this.options.cellSize);
+        }
+        
         this.data = null;
         this.sorted = null;
         this.subsorted = null;
@@ -431,10 +443,39 @@
         // Кэш изображений для обложек
         this.imageCache = new Map();
         
+        // Touch-события
+        this.pinching = false;
+        this.lastPinchDistance = 0;
+        
         this._setupEventListeners();
         this._resizeCanvas();
         this._createTooltip();
     }
+    
+    // === АДАПТИВНЫЕ МЕТОДЫ ===
+    
+    /**
+     * Рассчитывает адаптивный размер ячейки в зависимости от ширины экрана
+     * @param {number} baseCellSize - базовый размер ячейки из опций
+     * @returns {number} - адаптированный размер ячейки
+     */
+    VennGrid.prototype._getAdaptiveCellSize = function(baseCellSize) {
+        baseCellSize = baseCellSize || 50;
+        const screenWidth = window.innerWidth;
+        
+        // Мобильные телефоны (< tabletBreakpoint)
+        if (screenWidth < this.options.tabletBreakpoint) {
+            return Math.max(10, Math.floor(baseCellSize * this.options.mobileCellSizeMultiplier));
+        }
+        
+        // Планшеты (tabletBreakpoint - mobileBreakpoint)
+        if (screenWidth < this.options.mobileBreakpoint) {
+            return Math.max(15, Math.floor(baseCellSize * this.options.tabletCellSizeMultiplier));
+        }
+        
+        // Десктопы (> mobileBreakpoint)
+        return baseCellSize;
+    };
     
     // === ПУБЛИЧНЫЕ МЕТОДЫ ===
     
@@ -829,6 +870,12 @@
     VennGrid.prototype.destroy = function() {
         this._removeEventListeners();
         this._removeTooltip();
+        
+        // Очистка таймаута resize
+        if (this._resizeTimeout) {
+            clearTimeout(this._resizeTimeout);
+        }
+        
         this.clear();
         this.data = null;
         this.sorted = null;
@@ -839,17 +886,22 @@
     
     VennGrid.prototype._createTooltip = function() {
         this.tooltipElement = document.createElement('div');
+        
+        // Адаптивные стили в зависимости от ширины экрана
+        const isMobile = window.innerWidth < this.options.mobileBreakpoint;
+        
         this.tooltipElement.style.cssText = `
             position: fixed;
             background: rgba(0, 0, 0, 0.95);
             color: white;
-            padding: 15px;
+            padding: ${isMobile ? '12px' : '15px'};
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             pointer-events: none;
             z-index: 10000;
             display: none;
-            max-width: 300px;
+            max-width: ${isMobile ? 'calc(100vw - 40px)' : '300px'};
+            font-size: ${isMobile ? '14px' : '16px'};
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
         `;
         document.body.appendChild(this.tooltipElement);
@@ -899,18 +951,31 @@
         this.tooltipElement.innerHTML = html;
         this.tooltipElement.style.display = 'block';
         
-        // Позиционирование (справа от курсора, с проверкой границ экрана)
+        // Адаптивное позиционирование
         const tooltipRect = this.tooltipElement.getBoundingClientRect();
-        let left = x + 15;
-        let top = y - tooltipRect.height / 2;
+        const screenWidth = window.innerWidth;
+        let left, top;
         
-        // Проверка границ экрана
-        if (left + tooltipRect.width > window.innerWidth) {
-            left = x - tooltipRect.width - 15; // Слева от курсора
-        }
-        if (top < 10) top = 10;
-        if (top + tooltipRect.height > window.innerHeight - 10) {
-            top = window.innerHeight - tooltipRect.height - 10;
+        if (screenWidth < this.options.mobileBreakpoint) {
+            // На мобильных - показываем tooltip по центру внизу экрана
+            left = (screenWidth - tooltipRect.width) / 2;
+            top = window.innerHeight - tooltipRect.height - 20;
+            
+            // Убеждаемся что не выходит за границы
+            left = Math.max(10, Math.min(left, screenWidth - tooltipRect.width - 10));
+        } else {
+            // На десктопах - рядом с курсором (существующая логика)
+            left = x + 15;
+            top = y - tooltipRect.height / 2;
+            
+            // Проверка границ экрана
+            if (left + tooltipRect.width > window.innerWidth) {
+                left = x - tooltipRect.width - 15; // Слева от курсора
+            }
+            if (top < 10) top = 10;
+            if (top + tooltipRect.height > window.innerHeight - 10) {
+                top = window.innerHeight - tooltipRect.height - 10;
+            }
         }
         
         this.tooltipElement.style.left = left + 'px';
@@ -976,6 +1041,19 @@
         this.canvas.addEventListener('click', this._clickHandler);
         this.canvas.addEventListener('dblclick', this._doubleClickHandler);
         this.canvas.addEventListener('mouseleave', this._mouseLeaveHandler);
+        
+        // Touch-события для мобильных
+        this._touchStartHandler = this._handleTouchStart.bind(this);
+        this._touchMoveHandler = this._handleTouchMove.bind(this);
+        this._touchEndHandler = this._handleTouchEnd.bind(this);
+        
+        this.canvas.addEventListener('touchstart', this._touchStartHandler, { passive: false });
+        this.canvas.addEventListener('touchmove', this._touchMoveHandler, { passive: false });
+        this.canvas.addEventListener('touchend', this._touchEndHandler);
+        
+        // Resize для адаптивности
+        this._resizeHandler = this._handleResize.bind(this);
+        window.addEventListener('resize', this._resizeHandler);
     };
     
     VennGrid.prototype._removeEventListeners = function() {
@@ -986,6 +1064,14 @@
         this.canvas.removeEventListener('click', this._clickHandler);
         this.canvas.removeEventListener('dblclick', this._doubleClickHandler);
         this.canvas.removeEventListener('mouseleave', this._mouseLeaveHandler);
+        
+        // Touch-обработчики
+        this.canvas.removeEventListener('touchstart', this._touchStartHandler);
+        this.canvas.removeEventListener('touchmove', this._touchMoveHandler);
+        this.canvas.removeEventListener('touchend', this._touchEndHandler);
+        
+        // Resize-обработчик
+        window.removeEventListener('resize', this._resizeHandler);
     };
     
     VennGrid.prototype._handleMouseLeave = function(e) {
@@ -1082,10 +1168,122 @@
         this.dragging = false;
     };
     
+    // === TOUCH-СОБЫТИЯ ДЛЯ МОБИЛЬНЫХ ===
+    
+    /**
+     * Обработчик начала touch-события
+     */
+    VennGrid.prototype._handleTouchStart = function(e) {
+        if (e.touches.length === 1) {
+            // Одно касание - панорамирование
+            if (this.options.enablePan) {
+                this.dragging = true;
+                const touch = e.touches[0];
+                this.dragStart = { x: touch.clientX, y: touch.clientY };
+                this.panStart = { x: this.pan.x, y: this.pan.y };
+            }
+        } else if (e.touches.length === 2) {
+            // Два касания - зум
+            if (this.options.enableZoom) {
+                e.preventDefault();
+                this.pinching = true;
+                this.lastPinchDistance = this._getTouchDistance(e.touches);
+            }
+        }
+    };
+    
+    /**
+     * Обработчик движения touch-события
+     */
+    VennGrid.prototype._handleTouchMove = function(e) {
+        if (e.touches.length === 1 && this.dragging && this.options.enablePan) {
+            // Панорамирование одним пальцем
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - this.dragStart.x;
+            const deltaY = touch.clientY - this.dragStart.y;
+            
+            this.pan.x = this.panStart.x + deltaX;
+            this.pan.y = this.panStart.y + deltaY;
+            this.render();
+        } else if (e.touches.length === 2 && this.pinching && this.options.enableZoom) {
+            // Зум двумя пальцами (pinch-to-zoom)
+            e.preventDefault();
+            const currentDistance = this._getTouchDistance(e.touches);
+            const scale = currentDistance / this.lastPinchDistance;
+            
+            const newZoom = this.zoom * scale;
+            if (newZoom >= this.options.minZoom && newZoom <= this.options.maxZoom) {
+                this.zoom = newZoom;
+                this.render();
+                
+                if (this.options.onZoomChange) {
+                    this.options.onZoomChange(this.zoom);
+                }
+            }
+            
+            this.lastPinchDistance = currentDistance;
+        }
+    };
+    
+    /**
+     * Обработчик окончания touch-события
+     */
+    VennGrid.prototype._handleTouchEnd = function(e) {
+        if (e.touches.length === 0) {
+            this.dragging = false;
+            this.pinching = false;
+        }
+    };
+    
+    /**
+     * Вычисляет расстояние между двумя касаниями
+     */
+    VennGrid.prototype._getTouchDistance = function(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+    
     VennGrid.prototype._resizeCanvas = function() {
         const rect = this.canvas.getBoundingClientRect();
         this.canvas.width = rect.width;
         this.canvas.height = rect.height;
+    };
+    
+    /**
+     * Обработчик изменения размера окна (debounced)
+     */
+    VennGrid.prototype._handleResize = function() {
+        clearTimeout(this._resizeTimeout);
+        this._resizeTimeout = setTimeout(() => {
+            // Пересчитываем размеры canvas
+            this._resizeCanvas();
+            
+            // Пересчитываем cellSize для нового размера экрана
+            if (this.options.adaptiveCellSize) {
+                const baseCellSize = DEFAULT_OPTIONS.cellSize;
+                const newCellSize = this._getAdaptiveCellSize(baseCellSize);
+                if (newCellSize !== this.options.cellSize) {
+                    this.options.cellSize = newCellSize;
+                    
+                    // Пересчитываем gridSizes если есть данные
+                    if (this.data) {
+                        this.gridSizes = calculateGridSizes(
+                            this.sorted,
+                            this.subsorted,
+                            this.options.aspectRatio,
+                            this.canvas.width,
+                            this.canvas.height,
+                            this.options.cellSize
+                        );
+                    }
+                }
+            }
+            
+            // Перерисовываем
+            this.render();
+        }, 300); // Debounce 300ms
     };
     
     // === ЭКСПОРТ ===

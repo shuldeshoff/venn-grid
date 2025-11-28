@@ -1,7 +1,7 @@
 {
   "name": "venn-grid",
-  "version": "2.7.0",
-  "description": "Grid-based Venn diagram visualization library for game sets with interactive tooltips and zoom",
+  "version": "2.8.0",
+  "description": "Grid-based Venn diagram visualization library for game sets with mobile support, interactive tooltips and touch gestures",
   "main": "dist/venn-grid.min.js",
   "files": [
     "dist/",
@@ -34,7 +34,12 @@
     "zoom",
     "pan",
     "javascript",
-    "library"
+    "library",
+    "mobile",
+    "touch",
+    "responsive",
+    "adaptive",
+    "pinch-to-zoom"
   ],
   "author": "VennGrid Team",
   "license": "MIT",
